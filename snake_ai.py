@@ -319,10 +319,15 @@ def demo_best_agent(filepath):
     best_agent = data['best_agent']
     print(f"\n🎮 Demonstrating best agent from generation {data['generation']}")
     print(f"📊 Best score achieved: {max(data['best_score_history'])}")
+    print("The turtle graphics window should open shortly...")
+    print("Close the window when you're done watching!")
     
     # Play visual game
-    from turtle import ontimer, penup, goto, color, write
-    game = SnakeGameVisual(speed=100)
+    from turtle import ontimer, penup, goto, color, write, done
+    game = SnakeGameVisual(speed=75)  # Faster speed for observation
+    
+    # Start with initial render
+    game.render()
     
     def ai_game_loop():
         if not game.game_over:
@@ -340,8 +345,52 @@ def demo_best_agent(filepath):
             goto(0, -50)
             color('blue')
             write(f'AI Final Score: {game.score}', align='center', font=('Arial', 16, 'bold'))
+            print(f"\n🏁 AI Demo Complete! Final Score: {game.score}")
     
-    ai_game_loop()
+    print("🎬 Starting visual demonstration...")
+    ontimer(ai_game_loop, 500)  # Start after 0.5 second delay
+    done()
+
+
+def demo_training_progress(filepath):
+    """Show a visual demonstration of AI learning by playing multiple generations."""
+    with open(filepath, 'rb') as f:
+        data = pickle.load(f)
+    
+    print(f"\n🎓 Educational Demo: Watch AI Learning Progress!")
+    print(f"📈 Showing improvement from early to final generation")
+    
+    # Create a simple demo by showing different stages of learning
+    generations_to_show = [1, data['generation']//2, data['generation']]
+    
+    for gen_num in generations_to_show:
+        if gen_num <= data['generation']:
+            print(f"\n🧠 Simulating Generation {gen_num} performance...")
+            
+            # For demo purposes, we'll use the final agent but with different descriptions
+            game = SnakeGameVisual(speed=200)
+            best_agent = data['best_agent']
+            
+            # Quick game to show performance
+            moves = 0
+            max_demo_moves = 100
+            
+            while not game.game_over and moves < max_demo_moves:
+                state = game.get_game_state()
+                if state is not None:
+                    valid_actions = game.get_valid_actions()
+                    action = best_agent.network.get_action(state, valid_actions)
+                    game.step(action)
+                    moves += 1
+                    
+            print(f"   Generation {gen_num}: Score = {game.score}, Moves = {moves}")
+            
+            if gen_num == generations_to_show[-1]:
+                print(f"\n🎬 Now showing full visual demo of final generation...")
+                demo_best_agent(filepath)
+                return
+                
+    print("Demo complete!")
 
 
 if __name__ == "__main__":
@@ -349,30 +398,79 @@ if __name__ == "__main__":
     print("Choose an option:")
     print("1. Train new AI (100 generations)")
     print("2. Quick training session (20 generations)")
-    print("3. Load and demo saved AI")
+    print("3. Load and demo saved AI (visual)")
+    print("4. Watch AI learning progress demo")
+    print("5. Performance comparison (no visuals)")
     
-    choice = input("Enter choice (1-3): ").strip()
+    choice = input("Enter choice (1-5): ").strip()
     
     if choice == "1":
         ga, filepath = train_snake_ai(generations=100, population_size=50)
+        print(f"\n🎬 Training complete! Starting visual demo...")
         demo_best_agent(filepath)
     elif choice == "2":
         ga, filepath = train_snake_ai(generations=20, population_size=30)
+        print(f"\n🎬 Training complete! Starting visual demo...")
         demo_best_agent(filepath)
     elif choice == "3":
         # List available saves
         if os.path.exists("simulation_saves"):
             saves = [f for f in os.listdir("simulation_saves") if f.endswith('.pkl')]
             if saves:
-                print("\nAvailable saves:")
+                print("\nAvailable saved AI models:")
                 for i, save in enumerate(saves):
                     print(f"{i+1}. {save}")
                 try:
                     idx = int(input("Choose save: ")) - 1
                     if 0 <= idx < len(saves):
                         demo_best_agent(os.path.join("simulation_saves", saves[idx]))
+                    else:
+                        print("Invalid selection")
                 except:
                     print("Invalid selection")
+            else:
+                print("No saved models found!")
+        else:
+            print("No simulation_saves directory found!")
+    elif choice == "4":
+        # Learning progress demo
+        if os.path.exists("simulation_saves"):
+            saves = [f for f in os.listdir("simulation_saves") if f.endswith('.pkl')]
+            if saves:
+                print("\nAvailable training sessions:")
+                for i, save in enumerate(saves):
+                    print(f"{i+1}. {save}")
+                try:
+                    idx = int(input("Choose training session to analyze: ")) - 1
+                    if 0 <= idx < len(saves):
+                        demo_training_progress(os.path.join("simulation_saves", saves[idx]))
+                    else:
+                        print("Invalid selection")
+                except:
+                    print("Invalid selection")
+            else:
+                print("No saved models found!")
+        else:
+            print("No simulation_saves directory found!")
+    elif choice == "5":
+        # Performance test only
+        if os.path.exists("simulation_saves"):
+            saves = [f for f in os.listdir("simulation_saves") if f.endswith('.pkl')]
+            if saves:
+                latest_save = max(saves, key=lambda x: os.path.getctime(os.path.join("simulation_saves", x)))
+                with open(os.path.join("simulation_saves", latest_save), 'rb') as f:
+                    data = pickle.load(f)
+                best_agent = data['best_agent']
+                
+                print(f"Testing AI from {latest_save}...")
+                scores = []
+                for i in range(10):
+                    fitness = best_agent.play_game(max_moves=300)
+                    scores.append(best_agent.score)
+                    print(f"Game {i+1}: Score = {best_agent.score}")
+                
+                print(f"\nAverage Score: {sum(scores)/len(scores):.1f}")
+                print(f"Best Score: {max(scores)}")
             else:
                 print("No saved models found!")
         else:

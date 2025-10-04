@@ -343,17 +343,101 @@ class SnakeEngineDemo:
             'win_rate': win_rate
         }
         
-    def demo_visual_game(self, speed=150):
+    def demo_visual_game(self, speed=60):
         """Run a visual demonstration of the expert system."""
-        print("🎮 Starting visual demonstration...")
-        print("Watch the expert system play Snake!")
+        print("🎮 Starting Expert System Visual Demo...")
+        print("Watch the algorithmic AI play Snake using:")
+        print("  🗺️  A* Pathfinding")
+        print("  🛡️  Safety Analysis") 
+        print("  🎯 Strategic Decision Making")
+        print("\nThe turtle graphics window should open shortly...")
+        print("Close the window when you're done watching!")
         
-        score, moves, game_over = self.play_single_game(visual=True, speed=speed)
+        from turtle import done, ontimer
+        game = SnakeGameVisual(speed=speed)
         
-        print(f"\n🏁 Demo Complete!")
-        print(f"   Final Score: {score}")
-        print(f"   Total Moves: {moves}")
-        print(f"   Game Status: {'Game Over' if game_over else 'Time Limit'}")
+        # Start with initial render
+        game.render()
+        
+        def expert_game_loop():
+            if not game.game_over:
+                # Prepare game state for expert system
+                game_state = {
+                    'head': game.snake[-1],
+                    'snake': game.snake,
+                    'food': game.food
+                }
+                
+                # Get action from expert system
+                action = self.expert_system.choose_action(game_state)
+                
+                # Execute action
+                game.step(action)
+                game.render()
+                
+                # Schedule next move
+                ontimer(expert_game_loop, game.speed)
+            else:
+                # Game over - show final results
+                from turtle import penup, goto, color, write
+                penup()
+                goto(0, -50)
+                color('purple')
+                write(f'Expert System Final Score: {game.score}', 
+                      align='center', font=('Arial', 16, 'bold'))
+                      
+                penup()
+                goto(0, -80)
+                color('blue')
+                write(f'Moves: {game.moves} | Algorithm: A* + Heuristics', 
+                      align='center', font=('Arial', 12, 'normal'))
+                      
+                print(f"\n🏁 Expert System Demo Complete!")
+                print(f"   Final Score: {game.score}")
+                print(f"   Total Moves: {game.moves}")
+                print(f"   Algorithm: Classical AI (A* + Safety Analysis)")
+        
+        # Start the demo
+        ontimer(expert_game_loop, 500)  # Start after 0.5 second delay
+        done()  # This will block until window is closed
+        
+    def compare_with_human_demo(self):
+        """Demo showing expert system vs human-like random play."""
+        print("🤖 vs 🎲 Expert System vs Random Player Demo")
+        print("=" * 50)
+        
+        # Expert system game
+        print("\n🧠 Expert System Performance:")
+        expert_score, expert_moves, expert_over = self.play_single_game(max_moves=300)
+        print(f"   Score: {expert_score}, Moves: {expert_moves}")
+        
+        # Random player simulation
+        print("\n🎲 Random Player Simulation:")
+        random_game = SnakeGame()
+        random_game.max_moves = 300
+        
+        import random
+        moves = 0
+        while not random_game.game_over and moves < 300:
+            # Random valid action
+            valid_actions = random_game.get_valid_actions()
+            if valid_actions:
+                action = random.choice(valid_actions)
+                random_game.step(action)
+            moves += 1
+            
+        print(f"   Score: {random_game.score}, Moves: {moves}")
+        
+        print(f"\n🏆 Results:")
+        print(f"   Expert System: {expert_score} points")
+        print(f"   Random Player: {random_game.score} points")
+        
+        if expert_score > random_game.score:
+            print(f"   🧠 Expert System wins by {expert_score - random_game.score} points!")
+        else:
+            print(f"   🎲 Random player got lucky this time!")
+            
+        return expert_score, random_game.score
 
 
 def compare_ai_approaches():
@@ -427,11 +511,13 @@ if __name__ == "__main__":
     print("🐍 Snake Expert System 🧠")
     print("Choose an option:")
     print("1. Run performance test (20 games)")
-    print("2. Visual demonstration")
+    print("2. Visual demonstration (watch AI play)")
     print("3. Compare Expert System vs Neural Network")
     print("4. Quick test (5 games)")
+    print("5. Expert vs Random player demo")
+    print("6. Side-by-side AI comparison (visual)")
     
-    choice = input("Enter choice (1-4): ").strip()
+    choice = input("Enter choice (1-6): ").strip()
     
     if choice == "1":
         demo = SnakeEngineDemo()
@@ -444,6 +530,45 @@ if __name__ == "__main__":
     elif choice == "4":
         demo = SnakeEngineDemo()
         demo.run_performance_test(num_games=5)
+    elif choice == "5":
+        demo = SnakeEngineDemo()
+        demo.compare_with_human_demo()
+    elif choice == "6":
+        print("\n🤖 Side-by-Side AI Comparison")
+        print("This will show both AIs playing sequentially...")
+        
+        # First show expert system
+        print("\n🧠 First: Expert System Demo")
+        demo = SnakeEngineDemo()
+        expert_score, _, _ = demo.play_single_game(visual=False, max_moves=200)
+        print(f"Expert System achieved score: {expert_score}")
+        
+        input("\nPress Enter to start Expert System visual demo...")
+        demo.demo_visual_game(speed=60)
+        
+        # Then show neural network if available
+        try:
+            import os
+            import pickle
+            if os.path.exists("simulation_saves"):
+                saves = [f for f in os.listdir("simulation_saves") if f.endswith('.pkl')]
+                if saves:
+                    latest_save = max(saves, key=lambda x: os.path.getctime(os.path.join("simulation_saves", x)))
+                    print(f"\n🧬 Next: Neural Network Demo (from {latest_save})")
+                    
+                    input("Press Enter to start Neural Network visual demo...")
+                    
+                    # Import and run neural network demo
+                    import sys
+                    sys.path.append('.')
+                    from snake_ai import demo_best_agent
+                    demo_best_agent(os.path.join("simulation_saves", latest_save))
+                else:
+                    print("\n❌ No trained neural networks found. Train one first with snake_ai.py!")
+            else:
+                print("\n❌ No simulation saves found. Train a neural network first!")
+        except Exception as e:
+            print(f"\n❌ Could not load neural network demo: {e}")
     else:
         print("Invalid choice!")
         
