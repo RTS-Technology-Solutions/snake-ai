@@ -1,3 +1,13 @@
+---
+project:
+  id: snake-ai
+  name: Snake AI
+  date: 2025-10-04
+  status: feature-complete
+  tags: [game, AI]
+  priority: medium
+  next_action: None
+---
 # 🐍 Snake-tastic AI Adventures: Classic vs Modern Intelligence! 🤖✨
 
 Hey future AI scientists! 👋 Get ready to explore the fascinating world of artificial intelligence through the classic game of Snake! This project is like a time machine 🕰️ that shows you how computers learned to play games in the "old days" versus how they do it today!
